@@ -16,3 +16,9 @@ def test_main_help_outputs_usage(capsys: pytest.CaptureFixture[str]) -> None:
     captured = capsys.readouterr()
     assert "usage: styleagent-runner" in captured.out
 
+
+def test_parser_supports_poll_command() -> None:
+    parser = build_parser()
+    args = parser.parse_args(["poll", "--once"])
+    assert args.command == "poll"
+    assert args.once is True

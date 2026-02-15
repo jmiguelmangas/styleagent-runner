@@ -14,6 +14,18 @@ pip install -e .[dev]
 styleagent-runner --help
 ```
 
+Run polling loop:
+
+```bash
+styleagent-runner poll
+```
+
+Run a single poll iteration:
+
+```bash
+styleagent-runner poll --once
+```
+
 ## Current MVP Capabilities
 
 - Job type support: `compile_captureone`
@@ -25,6 +37,7 @@ styleagent-runner --help
 
 Environment variables:
 - `RUNNER_API_BASE_URL` (default: `http://localhost:8000`)
+- `RUNNER_POLL_INTERVAL` (default: `5.0`)
 - `RUNNER_API_KEY` (optional, bearer token placeholder)
 - `RUNNER_HTTP_TIMEOUT_SECONDS` (default: `10.0`)
 - `RUNNER_HTTP_RETRIES` (default: `2`)
