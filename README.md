@@ -14,6 +14,14 @@ pip install -e .[dev]
 styleagent-runner --help
 ```
 
+## Configuration
+
+Environment variables:
+- `RUNNER_API_BASE_URL` (default: `http://localhost:8000`)
+- `RUNNER_API_KEY` (optional, bearer token placeholder)
+- `RUNNER_HTTP_TIMEOUT_SECONDS` (default: `10.0`)
+- `RUNNER_HTTP_RETRIES` (default: `2`)
+
 ## Lint
 
 ```bash
