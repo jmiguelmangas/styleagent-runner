@@ -25,3 +25,8 @@ jobs:
 
       - name: Test
         run: pytest --cov=runner --cov-fail-under=85 --cov-report=term-missing -q
+
+      - name: Dependency Audit
+        run: |
+          python -m pip install pip-audit
+          pip-audit -r requirements.txt
