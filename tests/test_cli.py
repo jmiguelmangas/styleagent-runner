@@ -22,3 +22,10 @@ def test_parser_supports_poll_command() -> None:
     args = parser.parse_args(["poll", "--once"])
     assert args.command == "poll"
     assert args.once is True
+
+
+def test_parser_supports_run_command() -> None:
+    parser = build_parser()
+    args = parser.parse_args(["run", "--job-id", "job_42"])
+    assert args.command == "run"
+    assert args.job_id == "job_42"

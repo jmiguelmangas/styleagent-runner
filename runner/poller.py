@@ -8,7 +8,7 @@ import time
 
 from runner.api import RunnerBackendApi
 from runner.jobs import JobExecutor
-from runner.types import JobExecutionResult
+from runner.types import Job, JobExecutionResult
 
 
 class RunnerPoller:
@@ -32,19 +32,22 @@ class RunnerPoller:
         if not jobs:
             return None
 
-        job = jobs[0]
+        return self.execute_job(jobs[0])
+
+    def run_job_id(self, job_id: str) -> JobExecutionResult:
+        job = self._api.get_job(job_id)
+        return self.execute_job(job)
+
+    def execute_job(self, job: Job) -> JobExecutionResult:
         self._api.claim_job(job.job_id)
         self._api.heartbeat_job(job.job_id, status="running")
         result = self._executor.execute(job)
         self._api.complete_job(result)
-
         for log in result.logs:
             self._emit(json.dumps(log.to_dict(), sort_keys=True))
-
         return result
 
     def poll_forever(self) -> None:
         while True:
             self.poll_once()
             self._sleep(self._poll_interval_seconds)
-

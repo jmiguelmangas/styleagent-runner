@@ -12,6 +12,12 @@ class RunnerBackendApi:
     def __init__(self, client: RunnerHttpClient) -> None:
         self._client = client
 
+    def get_job(self, job_id: str) -> Job:
+        payload = self._client.request_json("GET", f"/runner/jobs/{job_id}")
+        if not isinstance(payload, dict):
+            raise ValueError("Invalid job payload from backend")
+        return job_from_dict(payload)
+
     def list_pending_jobs(self, *, limit: int = 1) -> list[Job]:
         payload = self._client.request_json(
             "GET",
@@ -51,4 +57,3 @@ class RunnerBackendApi:
             f"/runner/jobs/{result.job_id}/complete",
             json=payload,
         )
-

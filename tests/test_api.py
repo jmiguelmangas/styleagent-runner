@@ -36,6 +36,30 @@ def test_api_lists_jobs_from_items_payload() -> None:
     assert jobs[0].job_id == "job_1"
 
 
+def test_api_get_job_by_id() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "GET"
+        assert request.url.path == "/runner/jobs/job_9"
+        return httpx.Response(
+            200,
+            json={
+                "job_id": "job_9",
+                "job_type": "compile_captureone",
+                "payload": {"style_id": "style_9", "version": "v9"},
+            },
+        )
+
+    transport = httpx.MockTransport(handler)
+    settings = RunnerSettings(api_base_url="http://localhost:8000")
+    with RunnerHttpClient(settings, transport=transport, sleep=lambda _: None) as client:
+        api = RunnerBackendApi(client)
+        job = api.get_job("job_9")
+
+    assert job.job_id == "job_9"
+    assert job.payload.style_id == "style_9"
+    assert job.payload.version == "v9"
+
+
 def test_api_complete_job_posts_result_payload() -> None:
     seen_payload: dict[str, object] = {}
 
