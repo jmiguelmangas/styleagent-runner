@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "styleagent-runner"
+version = "0.1.0"
+description = "StyleAgent thin runner CLI (MVP)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[project.scripts]
+styleagent-runner = "runner.cli:main"
+
+[tool.ruff]
+line-length = 100
