@@ -2,6 +2,13 @@
 
 Thin runner CLI for StyleAgent MVP.
 
+Current status:
+- Phase 0: scaffold + CI
+- Phase 1: configuration + HTTP client
+- Phase 2: minimal job model + execution logs
+- Phase 3: polling loop
+- Phase 4: on-demand execution by job id
+
 ## Setup
 
 ```bash
@@ -38,6 +45,16 @@ styleagent-runner run --job-id <job_id>
 - Status transitions: `picked_up -> running -> succeeded/failed`
 - Thin execution model: runner calls backend compile endpoint
 - Structured execution logs included in job results
+- Polling mode and one-shot mode
+- On-demand execution mode by backend job id
+
+## Expected Backend Contracts
+
+- `GET /runner/jobs?status=pending&limit=1`
+- `GET /runner/jobs/{job_id}`
+- `POST /runner/jobs/{job_id}/claim`
+- `POST /runner/jobs/{job_id}/heartbeat`
+- `POST /runner/jobs/{job_id}/complete`
 
 ## Configuration
 
