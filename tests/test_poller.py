@@ -17,6 +17,12 @@ class FakeApi:
     def claim_job(self, job_id: str) -> None:
         self.claimed.append(job_id)
 
+    def get_job(self, job_id: str) -> Job:
+        for job in self._jobs:
+            if job.job_id == job_id:
+                return job
+        raise ValueError("job not found")
+
     def heartbeat_job(self, job_id: str, status: str) -> None:
         self.heartbeats.append((job_id, status))
 
@@ -96,3 +102,32 @@ def test_poller_poll_once_processes_one_job() -> None:
     assert len(api.completed) == 1
     assert len(emitted) == 1
 
+
+def test_poller_run_job_id_processes_specific_job() -> None:
+    api = FakeApi(
+        jobs=[
+            Job(
+                job_id="job_9",
+                job_type="compile_captureone",
+                payload=CompileCaptureOnePayload(style_id="s9", version="v9"),
+            )
+        ]
+    )
+    executor = FakeExecutor()
+    emitted: list[str] = []
+    poller = RunnerPoller(
+        api,
+        executor,
+        poll_interval_seconds=0.01,
+        sleep=lambda _: None,
+        emit=emitted.append,
+    )
+
+    result = poller.run_job_id("job_9")
+
+    assert result.status == "succeeded"
+    assert executor.executed == ["job_9"]
+    assert api.claimed == ["job_9"]
+    assert api.heartbeats == [("job_9", "running")]
+    assert len(api.completed) == 1
+    assert len(emitted) == 1

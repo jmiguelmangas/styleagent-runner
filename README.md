@@ -26,6 +26,12 @@ Run a single poll iteration:
 styleagent-runner poll --once
 ```
 
+Run one specific job by ID (debug):
+
+```bash
+styleagent-runner run --job-id <job_id>
+```
+
 ## Current MVP Capabilities
 
 - Job type support: `compile_captureone`

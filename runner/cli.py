@@ -29,6 +29,8 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Run one polling iteration and exit",
     )
+    run_parser = subparsers.add_parser("run", help="Run a specific job by ID")
+    run_parser.add_argument("--job-id", required=True, help="Backend job identifier")
 
     return parser
 
@@ -51,6 +53,17 @@ def main(argv: Sequence[str] | None = None) -> None:
                 poller.poll_once()
             else:
                 poller.poll_forever()
+    elif args.command == "run":
+        settings = RunnerSettings.from_env()
+        with RunnerHttpClient(settings) as client:
+            api = RunnerBackendApi(client)
+            executor = JobExecutor(client)
+            poller = RunnerPoller(
+                api,
+                executor,
+                poll_interval_seconds=settings.poll_interval_seconds,
+            )
+            poller.run_job_id(args.job_id)
 
 
 if __name__ == "__main__":
