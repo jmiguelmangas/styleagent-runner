@@ -90,3 +90,32 @@ def transition_status(current: JobStatus, target: JobStatus) -> JobStatus:
         raise ValueError(f"Invalid status transition: {current} -> {target}")
     return target
 
+
+def job_from_dict(data: dict[str, Any]) -> Job:
+    job_id = data.get("job_id")
+    job_type = data.get("job_type")
+    payload_raw = data.get("payload")
+
+    if not isinstance(job_id, str) or not job_id:
+        raise ValueError("Invalid job payload: missing job_id")
+    if job_type != "compile_captureone":
+        raise ValueError(f"Unsupported job type: {job_type}")
+    if not isinstance(payload_raw, dict):
+        raise ValueError("Invalid job payload: missing payload object")
+
+    style_id = payload_raw.get("style_id")
+    version = payload_raw.get("version")
+    if not isinstance(style_id, str) or not isinstance(version, str):
+        raise ValueError("Invalid compile_captureone payload")
+
+    status_raw = data.get("status")
+    status: JobStatus = "picked_up"
+    if status_raw in {"picked_up", "running", "succeeded", "failed"}:
+        status = status_raw
+
+    return Job(
+        job_id=job_id,
+        job_type="compile_captureone",
+        payload=CompileCaptureOnePayload(style_id=style_id, version=version),
+        status=status,
+    )
