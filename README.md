@@ -76,3 +76,20 @@ ruff check .
 ```bash
 pytest -q
 ```
+
+## Docker
+
+Build image from `runner/`:
+
+```bash
+docker build -t styleagent-runner:dev .
+```
+
+Run runner in polling mode:
+
+```bash
+docker run --rm \
+  -e RUNNER_API_BASE_URL=http://host.docker.internal:8000 \
+  -e RUNNER_POLL_INTERVAL=5 \
+  styleagent-runner:dev
+```
