@@ -14,6 +14,13 @@ pip install -e .[dev]
 styleagent-runner --help
 ```
 
+## Current MVP Capabilities
+
+- Job type support: `compile_captureone`
+- Status transitions: `picked_up -> running -> succeeded/failed`
+- Thin execution model: runner calls backend compile endpoint
+- Structured execution logs included in job results
+
 ## Configuration
 
 Environment variables:
