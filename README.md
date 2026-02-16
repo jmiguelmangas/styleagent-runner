@@ -83,6 +83,11 @@ With coverage gate (same as CI):
 pytest --cov=runner --cov-fail-under=85 --cov-report=term-missing -q
 ```
 
+## Automation
+
+- `.github/dependabot.yml` creates weekly dependency update PRs
+- `.github/workflows/sbom.yml` generates a CycloneDX SBOM artifact
+
 ## Docker
 
 Build image from `runner/`:
