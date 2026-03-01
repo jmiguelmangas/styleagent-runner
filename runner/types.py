@@ -9,6 +9,7 @@ from typing import Any, Literal
 JobType = Literal["compile_captureone"]
 JobStatus = Literal["picked_up", "running", "succeeded", "failed"]
 LogLevel = Literal["info", "error"]
+ExecutionMode = Literal["api", "host"]
 
 _ALLOWED_TRANSITIONS: dict[JobStatus, set[JobStatus]] = {
     "picked_up": {"running"},
@@ -22,6 +23,7 @@ _ALLOWED_TRANSITIONS: dict[JobStatus, set[JobStatus]] = {
 class CompileCaptureOnePayload:
     style_id: str
     version: str
+    execution_mode: ExecutionMode = "api"
 
 
 @dataclass(frozen=True)
@@ -107,6 +109,9 @@ def job_from_dict(data: dict[str, Any]) -> Job:
     version = payload_raw.get("version")
     if not isinstance(style_id, str) or not isinstance(version, str):
         raise ValueError("Invalid compile_captureone payload")
+    execution_mode_raw = payload_raw.get("execution_mode", "api")
+    if execution_mode_raw not in {"api", "host"}:
+        raise ValueError("Invalid compile_captureone payload")
 
     status_raw = data.get("status")
     status: JobStatus = "picked_up"
@@ -116,6 +121,10 @@ def job_from_dict(data: dict[str, Any]) -> Job:
     return Job(
         job_id=job_id,
         job_type="compile_captureone",
-        payload=CompileCaptureOnePayload(style_id=style_id, version=version),
+        payload=CompileCaptureOnePayload(
+            style_id=style_id,
+            version=version,
+            execution_mode=execution_mode_raw,
+        ),
         status=status,
     )

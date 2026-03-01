@@ -27,7 +27,11 @@ def run_compile_captureone(
     if not isinstance(compile_result, dict):
         raise ValueError("Invalid compile response payload")
 
-    if settings is None or settings.execution_mode != "host" or not settings.captureone_auto_open:
+    effective_mode = payload.execution_mode
+    if settings is not None and effective_mode == "api":
+        effective_mode = settings.execution_mode
+
+    if settings is None or effective_mode != "host" or not settings.captureone_auto_open:
         return compile_result
 
     artifact_id = compile_result.get("artifact_id")
