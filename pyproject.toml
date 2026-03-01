@@ -18,3 +18,9 @@ styleagent-runner = "runner.cli:main"
 
 [tool.ruff]
 line-length = 100
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: tests that exercise runner with external services",
+    "host_local: tests requiring local macOS Capture One setup",
+]

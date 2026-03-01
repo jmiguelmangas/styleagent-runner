@@ -129,6 +129,20 @@ With coverage gate (same as CI):
 pytest --cov=runner --cov-fail-under=85 --cov-report=term-missing -q
 ```
 
+Local host integration test (opt-in, macOS):
+
+```bash
+RUNNER_HOST_IT=1 \
+RUNNER_API_BASE_URL=http://localhost:8000 \
+RUNNER_EXECUTION_MODE=host \
+RUNNER_CAPTUREONE_APP_PATH="/Applications/Capture One.app" \
+pytest -q tests/integration/test_host_local_integration.py
+```
+
+Prerequisites:
+- backend is running and reachable at `RUNNER_API_BASE_URL`
+- Capture One app is installed locally
+
 ## Automation
 
 - `.github/dependabot.yml` creates weekly dependency update PRs
