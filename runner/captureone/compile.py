@@ -8,7 +8,7 @@ from runner.captureone.host import (
     HostIntegrationError,
     build_import_output_path,
     ensure_captureone_app_exists,
-    open_costyle_in_captureone,
+    import_costyle_in_captureone,
 )
 from runner.config import RunnerSettings
 from runner.http import RunnerHttpClient
@@ -73,16 +73,19 @@ def run_compile_captureone(
             details={**host_context, "artifact_id": artifact_id, "error": str(exc)},
         ) from exc
 
-    open_costyle_in_captureone(
+    launch_method = import_costyle_in_captureone(
         app_path=app_path,
         costyle_path=output_path,
         timeout_seconds=settings.captureone_open_timeout_seconds,
+        launch_mode=settings.captureone_launch_mode,
+        cli_command=settings.captureone_cli_command,
     )
 
     return {
         **compile_result,
         "host_integration": {
             "mode": "host",
+            "launch_method": launch_method,
             "captureone_app_path": app_path,
             "imported_costyle_path": str(output_path),
         },

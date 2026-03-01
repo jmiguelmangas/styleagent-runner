@@ -13,6 +13,8 @@ def test_settings_defaults() -> None:
     assert settings.execution_mode == "api"
     assert settings.captureone_app_path == "/Applications/Capture One.app"
     assert settings.captureone_auto_open is True
+    assert settings.captureone_launch_mode == "auto"
+    assert settings.captureone_cli_command == ""
 
 
 def test_settings_from_env_custom_values() -> None:
@@ -28,6 +30,8 @@ def test_settings_from_env_custom_values() -> None:
             "RUNNER_CAPTUREONE_IMPORT_DIR": "/tmp/captureone-imports",
             "RUNNER_CAPTUREONE_OPEN_TIMEOUT_SECONDS": "20",
             "RUNNER_CAPTUREONE_AUTO_OPEN": "false",
+            "RUNNER_CAPTUREONE_LAUNCH_MODE": "cli",
+            "RUNNER_CAPTUREONE_CLI_COMMAND": "captureone-cli --import {costyle_path}",
         }
     )
     assert settings.api_base_url == "https://api.styleagent.local"
@@ -40,6 +44,8 @@ def test_settings_from_env_custom_values() -> None:
     assert settings.captureone_import_dir == "/tmp/captureone-imports"
     assert settings.captureone_open_timeout_seconds == 20
     assert settings.captureone_auto_open is False
+    assert settings.captureone_launch_mode == "cli"
+    assert settings.captureone_cli_command == "captureone-cli --import {costyle_path}"
 
 
 def test_settings_invalid_retry_raises() -> None:
@@ -55,3 +61,8 @@ def test_settings_invalid_poll_interval_raises() -> None:
 def test_settings_invalid_execution_mode_raises() -> None:
     with pytest.raises(ValueError, match="RUNNER_EXECUTION_MODE"):
         RunnerSettings.from_env({"RUNNER_EXECUTION_MODE": "desktop"})
+
+
+def test_settings_invalid_captureone_launch_mode_raises() -> None:
+    with pytest.raises(ValueError, match="RUNNER_CAPTUREONE_LAUNCH_MODE"):
+        RunnerSettings.from_env({"RUNNER_CAPTUREONE_LAUNCH_MODE": "desktop"})

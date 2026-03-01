@@ -20,6 +20,8 @@ class RunnerSettings:
     captureone_import_dir: str = "~/.styleagent/captureone/imports"
     captureone_open_timeout_seconds: float = 15.0
     captureone_auto_open: bool = True
+    captureone_launch_mode: Literal["auto", "open", "cli"] = "auto"
+    captureone_cli_command: str = ""
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None) -> "RunnerSettings":
@@ -34,6 +36,8 @@ class RunnerSettings:
         captureone_import_dir = env.get("RUNNER_CAPTUREONE_IMPORT_DIR", cls.captureone_import_dir).strip()
         open_timeout_raw = env.get("RUNNER_CAPTUREONE_OPEN_TIMEOUT_SECONDS")
         auto_open_raw = env.get("RUNNER_CAPTUREONE_AUTO_OPEN")
+        launch_mode = env.get("RUNNER_CAPTUREONE_LAUNCH_MODE", cls.captureone_launch_mode).strip().lower()
+        cli_command = env.get("RUNNER_CAPTUREONE_CLI_COMMAND", cls.captureone_cli_command).strip()
 
         poll_interval_seconds = cls.poll_interval_seconds
         if poll_interval_raw is not None:
@@ -55,6 +59,8 @@ class RunnerSettings:
 
         if execution_mode not in {"api", "host"}:
             raise ValueError("RUNNER_EXECUTION_MODE must be one of: api, host")
+        if launch_mode not in {"auto", "open", "cli"}:
+            raise ValueError("RUNNER_CAPTUREONE_LAUNCH_MODE must be one of: auto, open, cli")
 
         captureone_open_timeout_seconds = cls.captureone_open_timeout_seconds
         if open_timeout_raw is not None:
@@ -77,4 +83,6 @@ class RunnerSettings:
             captureone_import_dir=captureone_import_dir,
             captureone_open_timeout_seconds=captureone_open_timeout_seconds,
             captureone_auto_open=captureone_auto_open,
+            captureone_launch_mode=launch_mode,
+            captureone_cli_command=cli_command,
         )
