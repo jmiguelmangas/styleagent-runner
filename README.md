@@ -111,6 +111,14 @@ Host execution failure taxonomy (job result `host_integration.error_code`):
 - `IMPORT_DIR_NOT_WRITABLE`
 - `DOWNLOAD_FAILED`
 
+## Observability
+
+- Runner adds `X-Request-ID` to backend calls for traceability.
+- For job-specific calls (`claim`, `heartbeat`, `complete`), request ids include the job id:
+  - `runner-<action>-<job_id>-<suffix>`
+- Runner also sends `X-Runner-Job-ID` for job-specific backend requests.
+- Backend echoes `X-Request-ID`, so you can correlate runner logs and backend access logs.
+
 ## Lint
 
 ```bash

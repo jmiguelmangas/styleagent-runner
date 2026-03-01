@@ -92,3 +92,25 @@ def test_http_client_request_bytes() -> None:
     client.close()
 
     assert payload == b"artifact-bytes"
+
+
+def test_http_client_sends_custom_headers() -> None:
+    seen_headers: dict[str, str | None] = {"x-request-id": None, "x-runner-job-id": None}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen_headers["x-request-id"] = request.headers.get("X-Request-ID")
+        seen_headers["x-runner-job-id"] = request.headers.get("X-Runner-Job-ID")
+        return httpx.Response(200, json={"ok": True})
+
+    transport = httpx.MockTransport(handler)
+    settings = RunnerSettings(api_base_url="http://localhost:8000", http_retries=0)
+    client = RunnerHttpClient(settings, transport=transport, sleep=lambda _: None)
+    _ = client.request_json(
+        "GET",
+        "/health",
+        headers={"X-Request-ID": "runner-test-abc", "X-Runner-Job-ID": "job_123"},
+    )
+    client.close()
+
+    assert seen_headers["x-request-id"] == "runner-test-abc"
+    assert seen_headers["x-runner-job-id"] == "job_123"

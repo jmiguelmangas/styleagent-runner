@@ -51,8 +51,9 @@ class RunnerHttpClient:
         *,
         json: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
     ) -> Any:
-        response = self._request_response(method, path, json=json, params=params)
+        response = self._request_response(method, path, json=json, params=params, headers=headers)
         if not response.content:
             return {}
         return response.json()
@@ -64,8 +65,9 @@ class RunnerHttpClient:
         *,
         json: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
     ) -> bytes:
-        response = self._request_response(method, path, json=json, params=params)
+        response = self._request_response(method, path, json=json, params=params, headers=headers)
         return response.content
 
     def _request_response(
@@ -75,12 +77,13 @@ class RunnerHttpClient:
         *,
         json: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
     ) -> httpx.Response:
         last_error: Exception | None = None
 
         for attempt in range(self._retries + 1):
             try:
-                response = self._client.request(method, path, json=json, params=params)
+                response = self._client.request(method, path, json=json, params=params, headers=headers)
             except httpx.RequestError as exc:
                 last_error = exc
                 if attempt == self._retries:
