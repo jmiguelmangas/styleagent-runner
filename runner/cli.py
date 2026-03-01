@@ -43,7 +43,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         settings = RunnerSettings.from_env()
         with RunnerHttpClient(settings) as client:
             api = RunnerBackendApi(client)
-            executor = JobExecutor(client)
+            executor = JobExecutor(client, settings=settings)
             poller = RunnerPoller(
                 api,
                 executor,
@@ -57,7 +57,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         settings = RunnerSettings.from_env()
         with RunnerHttpClient(settings) as client:
             api = RunnerBackendApi(client)
-            executor = JobExecutor(client)
+            executor = JobExecutor(client, settings=settings)
             poller = RunnerPoller(
                 api,
                 executor,

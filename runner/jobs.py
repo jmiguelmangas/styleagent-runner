@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from runner.captureone.compile import run_compile_captureone
+from runner.config import RunnerSettings
 from runner.http import RunnerHttpClient
 from runner.types import Job, JobExecutionResult, JobLog, transition_status
 
@@ -12,8 +13,9 @@ from runner.types import Job, JobExecutionResult, JobLog, transition_status
 class JobExecutor:
     """Execute a single job at a time (MVP, no concurrency)."""
 
-    def __init__(self, client: RunnerHttpClient) -> None:
+    def __init__(self, client: RunnerHttpClient, *, settings: RunnerSettings | None = None) -> None:
         self._client = client
+        self._settings = settings
 
     def execute(self, job: Job) -> JobExecutionResult:
         logs: list[JobLog] = []
@@ -44,7 +46,7 @@ class JobExecutor:
 
         try:
             if job.job_type == "compile_captureone":
-                result = run_compile_captureone(self._client, job.payload)
+                result = run_compile_captureone(self._client, job.payload, settings=self._settings)
             else:
                 raise ValueError(f"Unsupported job type: {job.job_type}")
 
@@ -80,4 +82,3 @@ class JobExecutor:
             error=error,
             logs=logs,
         )
-

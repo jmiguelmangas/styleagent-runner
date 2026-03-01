@@ -52,6 +52,30 @@ class RunnerHttpClient:
         json: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
     ) -> Any:
+        response = self._request_response(method, path, json=json, params=params)
+        if not response.content:
+            return {}
+        return response.json()
+
+    def request_bytes(
+        self,
+        method: str,
+        path: str,
+        *,
+        json: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+    ) -> bytes:
+        response = self._request_response(method, path, json=json, params=params)
+        return response.content
+
+    def _request_response(
+        self,
+        method: str,
+        path: str,
+        *,
+        json: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+    ) -> httpx.Response:
         last_error: Exception | None = None
 
         for attempt in range(self._retries + 1):
@@ -78,14 +102,10 @@ class RunnerHttpClient:
             except httpx.HTTPStatusError as exc:
                 raise RunnerHttpError(str(exc)) from exc
 
-            if not response.content:
-                return {}
-
-            return response.json()
+            return response
 
         raise RunnerHttpError("Backend request failed after retries") from last_error
 
 
 def _backoff_seconds(attempt: int) -> float:
     return 0.25 * (2**attempt)
-

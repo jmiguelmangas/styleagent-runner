@@ -27,7 +27,20 @@ def test_job_from_dict_parses_compile_captureone() -> None:
     assert job.job_type == "compile_captureone"
     assert job.payload.style_id == "style_1"
     assert job.payload.version == "v2"
+    assert job.payload.execution_mode == "api"
     assert job.status == "picked_up"
+
+
+def test_job_from_dict_parses_execution_mode() -> None:
+    job = job_from_dict(
+        {
+            "job_id": "job_2",
+            "job_type": "compile_captureone",
+            "payload": {"style_id": "style_2", "version": "v1", "execution_mode": "host"},
+            "status": "picked_up",
+        }
+    )
+    assert job.payload.execution_mode == "host"
 
 
 def test_job_from_dict_unsupported_type_raises() -> None:
@@ -37,5 +50,16 @@ def test_job_from_dict_unsupported_type_raises() -> None:
                 "job_id": "job_1",
                 "job_type": "unknown",
                 "payload": {"style_id": "style_1", "version": "v2"},
+            }
+        )
+
+
+def test_job_from_dict_invalid_execution_mode_raises() -> None:
+    with pytest.raises(ValueError, match="Invalid compile_captureone payload"):
+        job_from_dict(
+            {
+                "job_id": "job_1",
+                "job_type": "compile_captureone",
+                "payload": {"style_id": "style_1", "version": "v2", "execution_mode": "desktop"},
             }
         )
