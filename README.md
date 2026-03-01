@@ -147,6 +147,8 @@ Prerequisites:
 
 - `.github/dependabot.yml` creates weekly dependency update PRs
 - `.github/workflows/sbom.yml` generates a CycloneDX SBOM artifact
+- `.github/workflows/host-integration.yml` runs real host integration checks on self-hosted macOS runners
+  with label `captureone` (scheduled weekly and runnable manually)
 
 ## Docker
 
