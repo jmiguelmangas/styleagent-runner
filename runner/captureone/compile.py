@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from runner.captureone.host import (
+    HostIntegrationError,
     build_import_output_path,
     ensure_captureone_app_exists,
     open_costyle_in_captureone,
@@ -34,6 +35,12 @@ def run_compile_captureone(
     if settings is None or effective_mode != "host" or not settings.captureone_auto_open:
         return compile_result
 
+    host_context: dict[str, Any] = {
+        "mode": "host",
+        "captureone_app_path": settings.captureone_app_path,
+        "import_dir": settings.captureone_import_dir,
+    }
+
     artifact_id = compile_result.get("artifact_id")
     download_url = compile_result.get("download_url")
     if not isinstance(artifact_id, str) or not artifact_id:
@@ -41,10 +48,31 @@ def run_compile_captureone(
     if not isinstance(download_url, str) or not download_url:
         raise ValueError("Compile response missing download_url")
 
-    app_path = str(ensure_captureone_app_exists(settings.captureone_app_path))
-    artifact_bytes = client.request_bytes("GET", download_url)
-    output_path = build_import_output_path(settings.captureone_import_dir, artifact_id)
-    output_path.write_bytes(artifact_bytes)
+    try:
+        app_path = str(ensure_captureone_app_exists(settings.captureone_app_path))
+        host_context["captureone_app_path"] = app_path
+        artifact_bytes = client.request_bytes("GET", download_url)
+    except HostIntegrationError:
+        raise
+    except Exception as exc:
+        raise HostIntegrationError(
+            code="DOWNLOAD_FAILED",
+            message="Failed to download compiled artifact from backend",
+            details={**host_context, "download_url": download_url, "error": str(exc)},
+        ) from exc
+
+    try:
+        output_path = build_import_output_path(settings.captureone_import_dir, artifact_id)
+        output_path.write_bytes(artifact_bytes)
+    except HostIntegrationError:
+        raise
+    except Exception as exc:
+        raise HostIntegrationError(
+            code="IMPORT_DIR_NOT_WRITABLE",
+            message="Failed to write .costyle artifact to import directory",
+            details={**host_context, "artifact_id": artifact_id, "error": str(exc)},
+        ) from exc
+
     open_costyle_in_captureone(
         app_path=app_path,
         costyle_path=output_path,

@@ -90,6 +90,13 @@ Doctor command returns:
 - exit `1` when one or more checks fail
 - JSON diagnostic report to stdout
 
+Host execution failure taxonomy (job result `host_integration.error_code`):
+- `APP_NOT_INSTALLED`
+- `APPLE_EVENT_DENIED`
+- `OPEN_TIMEOUT`
+- `IMPORT_DIR_NOT_WRITABLE`
+- `DOWNLOAD_FAILED`
+
 ## Lint
 
 ```bash
