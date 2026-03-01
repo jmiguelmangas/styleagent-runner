@@ -80,3 +80,15 @@ def test_http_client_sends_api_key_header() -> None:
 
     assert seen_auth_header["value"] == "Bearer runner-token"
 
+
+def test_http_client_request_bytes() -> None:
+    def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"artifact-bytes")
+
+    transport = httpx.MockTransport(handler)
+    settings = RunnerSettings(api_base_url="http://localhost:8000", http_retries=0)
+    client = RunnerHttpClient(settings, transport=transport, sleep=lambda _: None)
+    payload = client.request_bytes("GET", "/artifacts/a1")
+    client.close()
+
+    assert payload == b"artifact-bytes"

@@ -8,6 +8,7 @@ Current status:
 - Phase 2: minimal job model + execution logs
 - Phase 3: polling loop
 - Phase 4: on-demand execution by job id
+- Host mode: optional Capture One desktop app open/import after compile
 
 ## Setup
 
@@ -64,6 +65,19 @@ Environment variables:
 - `RUNNER_API_KEY` (optional, bearer token placeholder)
 - `RUNNER_HTTP_TIMEOUT_SECONDS` (default: `10.0`)
 - `RUNNER_HTTP_RETRIES` (default: `2`)
+- `RUNNER_EXECUTION_MODE` (`api` or `host`, default: `api`)
+- `RUNNER_CAPTUREONE_AUTO_OPEN` (`true`/`false`, default: `true`)
+- `RUNNER_CAPTUREONE_APP_PATH` (default: `/Applications/Capture One.app`)
+- `RUNNER_CAPTUREONE_IMPORT_DIR` (default: `~/.styleagent/captureone/imports`)
+- `RUNNER_CAPTUREONE_OPEN_TIMEOUT_SECONDS` (default: `15`)
+
+Host-mode example (macOS):
+
+```bash
+RUNNER_EXECUTION_MODE=host \
+RUNNER_CAPTUREONE_APP_PATH="/Applications/Capture One.app" \
+styleagent-runner poll --once
+```
 
 ## Lint
 

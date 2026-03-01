@@ -10,6 +10,9 @@ def test_settings_defaults() -> None:
     assert settings.api_key is None
     assert settings.http_timeout_seconds == 10.0
     assert settings.http_retries == 2
+    assert settings.execution_mode == "api"
+    assert settings.captureone_app_path == "/Applications/Capture One.app"
+    assert settings.captureone_auto_open is True
 
 
 def test_settings_from_env_custom_values() -> None:
@@ -20,6 +23,11 @@ def test_settings_from_env_custom_values() -> None:
             "RUNNER_API_KEY": "secret-token",
             "RUNNER_HTTP_TIMEOUT_SECONDS": "4.5",
             "RUNNER_HTTP_RETRIES": "5",
+            "RUNNER_EXECUTION_MODE": "host",
+            "RUNNER_CAPTUREONE_APP_PATH": "/Applications/Capture One.app",
+            "RUNNER_CAPTUREONE_IMPORT_DIR": "/tmp/captureone-imports",
+            "RUNNER_CAPTUREONE_OPEN_TIMEOUT_SECONDS": "20",
+            "RUNNER_CAPTUREONE_AUTO_OPEN": "false",
         }
     )
     assert settings.api_base_url == "https://api.styleagent.local"
@@ -27,6 +35,11 @@ def test_settings_from_env_custom_values() -> None:
     assert settings.api_key == "secret-token"
     assert settings.http_timeout_seconds == 4.5
     assert settings.http_retries == 5
+    assert settings.execution_mode == "host"
+    assert settings.captureone_app_path == "/Applications/Capture One.app"
+    assert settings.captureone_import_dir == "/tmp/captureone-imports"
+    assert settings.captureone_open_timeout_seconds == 20
+    assert settings.captureone_auto_open is False
 
 
 def test_settings_invalid_retry_raises() -> None:
@@ -37,3 +50,8 @@ def test_settings_invalid_retry_raises() -> None:
 def test_settings_invalid_poll_interval_raises() -> None:
     with pytest.raises(ValueError, match="RUNNER_POLL_INTERVAL"):
         RunnerSettings.from_env({"RUNNER_POLL_INTERVAL": "0"})
+
+
+def test_settings_invalid_execution_mode_raises() -> None:
+    with pytest.raises(ValueError, match="RUNNER_EXECUTION_MODE"):
+        RunnerSettings.from_env({"RUNNER_EXECUTION_MODE": "desktop"})
