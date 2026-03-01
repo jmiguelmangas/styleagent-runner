@@ -29,3 +29,9 @@ def test_parser_supports_run_command() -> None:
     args = parser.parse_args(["run", "--job-id", "job_42"])
     assert args.command == "run"
     assert args.job_id == "job_42"
+
+
+def test_parser_supports_doctor_command() -> None:
+    parser = build_parser()
+    args = parser.parse_args(["doctor"])
+    assert args.command == "doctor"

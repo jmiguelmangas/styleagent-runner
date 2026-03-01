@@ -7,6 +7,7 @@ from collections.abc import Sequence
 
 from runner.api import RunnerBackendApi
 from runner.config import RunnerSettings
+from runner.doctor import run_doctor
 from runner.http import RunnerHttpClient
 from runner.jobs import JobExecutor
 from runner.poller import RunnerPoller
@@ -31,6 +32,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     run_parser = subparsers.add_parser("run", help="Run a specific job by ID")
     run_parser.add_argument("--job-id", required=True, help="Backend job identifier")
+    subparsers.add_parser("doctor", help="Run host integration preflight checks")
 
     return parser
 
@@ -64,6 +66,10 @@ def main(argv: Sequence[str] | None = None) -> None:
                 poll_interval_seconds=settings.poll_interval_seconds,
             )
             poller.run_job_id(args.job_id)
+    elif args.command == "doctor":
+        settings = RunnerSettings.from_env()
+        if not run_doctor(settings):
+            raise SystemExit(1)
 
 
 if __name__ == "__main__":
