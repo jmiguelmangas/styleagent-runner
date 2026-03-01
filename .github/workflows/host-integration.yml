@@ -1,0 +1,95 @@
+name: Host Integration (macOS)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * 2"
+
+concurrency:
+  group: host-integration-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  host-local:
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on:
+      - self-hosted
+      - macOS
+      - captureone
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout runner
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install runner deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Checkout backend
+        uses: actions/checkout@v4
+        with:
+          repository: jmiguelmangas/styleagent-backend
+          ref: main
+          path: backend-src
+
+      - name: Install backend deps
+        run: |
+          cd backend-src
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Start backend
+        run: |
+          cd backend-src
+          source .venv/bin/activate
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8000 > "$GITHUB_WORKSPACE/backend.log" 2>&1 &
+          echo $! > "$GITHUB_WORKSPACE/backend.pid"
+
+      - name: Wait for backend health
+        run: |
+          for _ in {1..60}; do
+            if curl -fsS "http://127.0.0.1:8000/health" >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Backend did not become healthy" >&2
+          exit 1
+
+      - name: Run host integration test
+        env:
+          RUNNER_HOST_IT: "1"
+          RUNNER_API_BASE_URL: "http://127.0.0.1:8000"
+          RAW_CAPTUREONE_APP_PATH: ${{ vars.RUNNER_CAPTUREONE_APP_PATH }}
+          RAW_CAPTUREONE_IMPORT_DIR: ${{ vars.RUNNER_CAPTUREONE_IMPORT_DIR }}
+          RAW_CAPTUREONE_LAUNCH_MODE: ${{ vars.RUNNER_CAPTUREONE_LAUNCH_MODE }}
+          RAW_CAPTUREONE_CLI_COMMAND: ${{ vars.RUNNER_CAPTUREONE_CLI_COMMAND }}
+        run: |
+          export RUNNER_CAPTUREONE_APP_PATH="${RAW_CAPTUREONE_APP_PATH:-/Applications/Capture One.app}"
+          export RUNNER_CAPTUREONE_IMPORT_DIR="${RAW_CAPTUREONE_IMPORT_DIR:-$HOME/.styleagent/captureone/imports}"
+          export RUNNER_CAPTUREONE_LAUNCH_MODE="${RAW_CAPTUREONE_LAUNCH_MODE:-auto}"
+          export RUNNER_CAPTUREONE_CLI_COMMAND="${RAW_CAPTUREONE_CLI_COMMAND:-}"
+          pytest -q tests/integration/test_host_local_integration.py
+
+      - name: Stop backend
+        if: always()
+        run: |
+          if [[ -f "$GITHUB_WORKSPACE/backend.pid" ]]; then
+            kill "$(cat "$GITHUB_WORKSPACE/backend.pid")" || true
+          fi
+
+      - name: Upload backend log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-host-integration-log
+          path: backend.log
