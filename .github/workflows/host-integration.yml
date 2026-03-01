@@ -29,8 +29,10 @@ jobs:
 
       - name: Install runner deps
         run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install -e ".[dev]"
+          python3 -m venv .venv-ci
+          source .venv-ci/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
 
       - name: Checkout backend
         uses: actions/checkout@v4
@@ -74,6 +76,7 @@ jobs:
           RAW_CAPTUREONE_LAUNCH_MODE: ${{ vars.RUNNER_CAPTUREONE_LAUNCH_MODE }}
           RAW_CAPTUREONE_CLI_COMMAND: ${{ vars.RUNNER_CAPTUREONE_CLI_COMMAND }}
         run: |
+          source .venv-ci/bin/activate
           export RUNNER_CAPTUREONE_APP_PATH="${RAW_CAPTUREONE_APP_PATH:-/Applications/Capture One.app}"
           export RUNNER_CAPTUREONE_IMPORT_DIR="${RAW_CAPTUREONE_IMPORT_DIR:-$HOME/.styleagent/captureone/imports}"
           export RUNNER_CAPTUREONE_LAUNCH_MODE="${RAW_CAPTUREONE_LAUNCH_MODE:-auto}"
