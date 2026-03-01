@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from runner.captureone.compile import run_compile_captureone
+from runner.captureone.host import HostIntegrationError
 from runner.config import RunnerSettings
 from runner.http import RunnerHttpClient
 from runner.types import Job, JobExecutionResult, JobLog, transition_status
@@ -59,6 +60,20 @@ class JobExecutor:
                     status=current_status,
                     message="Job execution completed",
                     context={"result": result},
+                )
+            )
+        except HostIntegrationError as exc:
+            error = str(exc)
+            result = {"host_integration": exc.to_host_integration()}
+            current_status = transition_status(current_status, "failed")
+            logs.append(
+                JobLog.create(
+                    level="error",
+                    event="job_failed",
+                    job_id=job.job_id,
+                    status=current_status,
+                    message="Job execution failed",
+                    context={"error": error, "result": result},
                 )
             )
         except Exception as exc:
