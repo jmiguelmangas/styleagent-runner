@@ -1,0 +1,43 @@
+name: Host Runner Readiness
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  check-host-runner:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check self-hosted host runner availability
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          RESPONSE="$(gh api repos/${{ github.repository }}/actions/runners)"
+          TOTAL="$(jq -r '.total_count' <<<"$RESPONSE")"
+
+          echo "Total registered self-hosted runners: $TOTAL"
+          echo "Runners summary:"
+          jq -r '.runners[]? | "- \(.name) status=\(.status) busy=\(.busy) labels=[\([.labels[].name] | join(","))]"' <<<"$RESPONSE" || true
+
+          MATCHING_COUNT="$(jq '[.runners[]? | select(
+            .status == "online" and
+            (.labels | map(.name) | index("self-hosted")) != null and
+            (.labels | map(.name) | index("macOS")) != null and
+            (.labels | map(.name) | index("captureone")) != null
+          )] | length' <<<"$RESPONSE")"
+
+          if [[ "$MATCHING_COUNT" -lt 1 ]]; then
+            echo "No online self-hosted runner with labels [self-hosted, macOS, captureone] found."
+            echo "Host Integration (macOS) jobs will remain queued until this is fixed."
+            exit 1
+          fi
+
+          echo "Host runner readiness check passed. matching_count=$MATCHING_COUNT"

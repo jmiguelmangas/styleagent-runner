@@ -157,6 +157,8 @@ Prerequisites:
 - `.github/workflows/sbom.yml` generates a CycloneDX SBOM artifact
 - `.github/workflows/host-integration.yml` runs real host integration checks on self-hosted macOS runners
   with label `captureone` (scheduled weekly and runnable manually)
+- `.github/workflows/host-runner-readiness.yml` verifies at least one online self-hosted runner
+  exists with labels `self-hosted`, `macOS`, `captureone`
 
 ### Host Workflow Readiness Checklist
 
