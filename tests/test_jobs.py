@@ -157,3 +157,54 @@ def test_job_executor_host_mode_fails_when_captureone_missing(tmp_path) -> None:
     assert result.result is None
     assert result.error is not None
     assert "Capture One app not found" in result.error
+
+
+def test_job_executor_payload_host_mode_overrides_api_settings(tmp_path, monkeypatch) -> None:
+    opened = {"count": 0}
+
+    def fake_run(cmd: list[str], check: bool, timeout: float) -> subprocess.CompletedProcess[str]:
+        opened["count"] += 1
+        assert check is True
+        assert timeout == 15.0
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr("runner.captureone.host.subprocess.run", fake_run)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST" and request.url.path == "/styles/style_1/versions/v1/compile":
+            return httpx.Response(
+                200,
+                json={
+                    "artifact_id": "artifact_777",
+                    "sha256": "abc123",
+                    "download_url": "/artifacts/artifact_777",
+                },
+            )
+        if request.method == "GET" and request.url.path == "/artifacts/artifact_777":
+            return httpx.Response(200, content=b"<SL Engine='13'>")
+        return httpx.Response(404, json={"detail": "not found"})
+
+    app_dir = tmp_path / "Capture One.app"
+    app_dir.mkdir()
+    import_dir = tmp_path / "imports"
+
+    transport = httpx.MockTransport(handler)
+    settings = RunnerSettings(
+        api_base_url="http://localhost:8000",
+        http_retries=0,
+        execution_mode="api",
+        captureone_app_path=str(app_dir),
+        captureone_import_dir=str(import_dir),
+    )
+    with RunnerHttpClient(settings, transport=transport, sleep=lambda _: None) as client:
+        executor = JobExecutor(client, settings=settings)
+        job = Job(
+            job_id="job_5",
+            job_type="compile_captureone",
+            payload=CompileCaptureOnePayload(style_id="style_1", version="v1", execution_mode="host"),
+        )
+        result = executor.execute(job)
+
+    assert result.status == "succeeded"
+    assert opened["count"] == 1
+    assert (import_dir / "artifact_777.costyle").exists()
