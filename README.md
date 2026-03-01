@@ -158,6 +158,31 @@ Prerequisites:
 - `.github/workflows/host-integration.yml` runs real host integration checks on self-hosted macOS runners
   with label `captureone` (scheduled weekly and runnable manually)
 
+### Host Workflow Readiness Checklist
+
+The `Host Integration (macOS)` workflow requires a self-hosted GitHub Actions runner with labels:
+- `self-hosted`
+- `macOS`
+- `captureone`
+
+Repository-level setup required in `styleagent-runner`:
+- Add at least one self-hosted runner with the labels above.
+- Ensure Capture One is installed on that machine.
+- Optional variables (`Settings > Secrets and variables > Actions > Variables`):
+  - `RUNNER_CAPTUREONE_APP_PATH`
+  - `RUNNER_CAPTUREONE_IMPORT_DIR`
+  - `RUNNER_CAPTUREONE_LAUNCH_MODE`
+  - `RUNNER_CAPTUREONE_CLI_COMMAND`
+
+Verification:
+- Trigger workflow manually:
+
+```bash
+gh workflow run "Host Integration (macOS)" -R jmiguelmangas/styleagent-runner --ref main
+```
+
+- Confirm it starts immediately (not stuck in `queued`) and completes `success`.
+
 ## Docker
 
 Build image from `runner/`:
