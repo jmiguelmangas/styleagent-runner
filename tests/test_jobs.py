@@ -116,6 +116,7 @@ def test_job_executor_host_mode_opens_artifact_in_captureone(tmp_path, monkeypat
     host_info = result.result.get("host_integration")
     assert isinstance(host_info, dict)
     assert host_info["mode"] == "host"
+    assert host_info["launch_method"] == "open"
     imported_path = import_dir / "artifact_123.costyle"
     assert imported_path.exists()
     assert imported_path.read_bytes() == b"<SL Engine='13'>"
@@ -211,6 +212,10 @@ def test_job_executor_payload_host_mode_overrides_api_settings(tmp_path, monkeyp
     assert result.status == "succeeded"
     assert opened["count"] == 1
     assert (import_dir / "artifact_777.costyle").exists()
+    assert result.result is not None
+    host_info = result.result.get("host_integration")
+    assert isinstance(host_info, dict)
+    assert host_info["launch_method"] == "open"
 
 
 def test_job_executor_host_mode_reports_download_failed(tmp_path) -> None:
@@ -296,3 +301,161 @@ def test_job_executor_host_mode_reports_open_timeout(tmp_path, monkeypatch) -> N
     host_info = result.result.get("host_integration")
     assert isinstance(host_info, dict)
     assert host_info["error_code"] == "OPEN_TIMEOUT"
+
+
+def test_job_executor_host_mode_cli_launch_success(tmp_path, monkeypatch) -> None:
+    captured: dict[str, object] = {"cmd": None}
+
+    def fake_run(cmd: list[str], check: bool, timeout: float) -> subprocess.CompletedProcess[str]:
+        captured["cmd"] = cmd
+        assert check is True
+        assert timeout == 15.0
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr("runner.captureone.host.subprocess.run", fake_run)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST" and request.url.path == "/styles/style_1/versions/v1/compile":
+            return httpx.Response(
+                200,
+                json={
+                    "artifact_id": "artifact_901",
+                    "sha256": "abc123",
+                    "download_url": "/artifacts/artifact_901",
+                },
+            )
+        if request.method == "GET" and request.url.path == "/artifacts/artifact_901":
+            return httpx.Response(200, content=b"<SL Engine='13'>")
+        return httpx.Response(404, json={"detail": "not found"})
+
+    app_dir = tmp_path / "Capture One.app"
+    app_dir.mkdir()
+    import_dir = tmp_path / "imports"
+
+    settings = RunnerSettings(
+        api_base_url="http://localhost:8000",
+        http_retries=0,
+        execution_mode="host",
+        captureone_app_path=str(app_dir),
+        captureone_import_dir=str(import_dir),
+        captureone_launch_mode="cli",
+        captureone_cli_command="captureone-cli import --style {costyle_path}",
+    )
+    with RunnerHttpClient(settings, transport=httpx.MockTransport(handler), sleep=lambda _: None) as client:
+        executor = JobExecutor(client, settings=settings)
+        job = Job(
+            job_id="job_cli_1",
+            job_type="compile_captureone",
+            payload=CompileCaptureOnePayload(style_id="style_1", version="v1"),
+        )
+        result = executor.execute(job)
+
+    assert result.status == "succeeded"
+    assert result.result is not None
+    host_info = result.result.get("host_integration")
+    assert isinstance(host_info, dict)
+    assert host_info["launch_method"] == "cli"
+    cmd = captured["cmd"]
+    assert isinstance(cmd, list)
+    assert cmd[:3] == ["captureone-cli", "import", "--style"]
+    assert cmd[-1] == str(import_dir / "artifact_901.costyle")
+
+
+def test_job_executor_host_mode_cli_requires_command(tmp_path) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST" and request.url.path == "/styles/style_1/versions/v1/compile":
+            return httpx.Response(
+                200,
+                json={
+                    "artifact_id": "artifact_902",
+                    "sha256": "abc123",
+                    "download_url": "/artifacts/artifact_902",
+                },
+            )
+        if request.method == "GET" and request.url.path == "/artifacts/artifact_902":
+            return httpx.Response(200, content=b"<SL Engine='13'>")
+        return httpx.Response(404, json={"detail": "not found"})
+
+    app_dir = tmp_path / "Capture One.app"
+    app_dir.mkdir()
+    settings = RunnerSettings(
+        api_base_url="http://localhost:8000",
+        http_retries=0,
+        execution_mode="host",
+        captureone_app_path=str(app_dir),
+        captureone_import_dir=str(tmp_path / "imports"),
+        captureone_launch_mode="cli",
+        captureone_cli_command="",
+    )
+    with RunnerHttpClient(settings, transport=httpx.MockTransport(handler), sleep=lambda _: None) as client:
+        executor = JobExecutor(client, settings=settings)
+        job = Job(
+            job_id="job_cli_2",
+            job_type="compile_captureone",
+            payload=CompileCaptureOnePayload(style_id="style_1", version="v1"),
+        )
+        result = executor.execute(job)
+
+    assert result.status == "failed"
+    assert result.result is not None
+    host_info = result.result.get("host_integration")
+    assert isinstance(host_info, dict)
+    assert host_info["error_code"] == "APP_NOT_INSTALLED"
+
+
+def test_job_executor_host_mode_auto_falls_back_to_open_when_cli_fails(tmp_path, monkeypatch) -> None:
+    calls: list[list[str]] = []
+
+    def fake_run(cmd: list[str], check: bool, timeout: float) -> subprocess.CompletedProcess[str]:
+        calls.append(cmd)
+        assert check is True
+        assert timeout == 15.0
+        if cmd and cmd[0] == "captureone-cli":
+            raise subprocess.CalledProcessError(returncode=2, cmd=cmd)
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr("runner.captureone.host.subprocess.run", fake_run)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST" and request.url.path == "/styles/style_1/versions/v1/compile":
+            return httpx.Response(
+                200,
+                json={
+                    "artifact_id": "artifact_903",
+                    "sha256": "abc123",
+                    "download_url": "/artifacts/artifact_903",
+                },
+            )
+        if request.method == "GET" and request.url.path == "/artifacts/artifact_903":
+            return httpx.Response(200, content=b"<SL Engine='13'>")
+        return httpx.Response(404, json={"detail": "not found"})
+
+    app_dir = tmp_path / "Capture One.app"
+    app_dir.mkdir()
+    import_dir = tmp_path / "imports"
+    settings = RunnerSettings(
+        api_base_url="http://localhost:8000",
+        http_retries=0,
+        execution_mode="host",
+        captureone_app_path=str(app_dir),
+        captureone_import_dir=str(import_dir),
+        captureone_launch_mode="auto",
+        captureone_cli_command="captureone-cli import --style {costyle_path}",
+    )
+    with RunnerHttpClient(settings, transport=httpx.MockTransport(handler), sleep=lambda _: None) as client:
+        executor = JobExecutor(client, settings=settings)
+        job = Job(
+            job_id="job_cli_3",
+            job_type="compile_captureone",
+            payload=CompileCaptureOnePayload(style_id="style_1", version="v1"),
+        )
+        result = executor.execute(job)
+
+    assert result.status == "succeeded"
+    assert result.result is not None
+    host_info = result.result.get("host_integration")
+    assert isinstance(host_info, dict)
+    assert host_info["launch_method"] == "open"
+    assert len(calls) == 2
+    assert calls[0][0] == "captureone-cli"
+    assert calls[1][:2] == ["open", "-a"]

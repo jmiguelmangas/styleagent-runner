@@ -76,6 +76,8 @@ Environment variables:
 - `RUNNER_CAPTUREONE_APP_PATH` (default: `/Applications/Capture One.app`)
 - `RUNNER_CAPTUREONE_IMPORT_DIR` (default: `~/.styleagent/captureone/imports`)
 - `RUNNER_CAPTUREONE_OPEN_TIMEOUT_SECONDS` (default: `15`)
+- `RUNNER_CAPTUREONE_LAUNCH_MODE` (`auto`, `open`, or `cli`, default: `auto`)
+- `RUNNER_CAPTUREONE_CLI_COMMAND` (optional template, supports `{app_path}` and `{costyle_path}`)
 
 Host-mode example (macOS):
 
@@ -84,6 +86,18 @@ RUNNER_EXECUTION_MODE=host \
 RUNNER_CAPTUREONE_APP_PATH="/Applications/Capture One.app" \
 styleagent-runner poll --once
 ```
+
+Host-mode with CLI command (strict CLI mode):
+
+```bash
+RUNNER_EXECUTION_MODE=host \
+RUNNER_CAPTUREONE_LAUNCH_MODE=cli \
+RUNNER_CAPTUREONE_CLI_COMMAND='captureone-cli import --style {costyle_path}' \
+styleagent-runner poll --once
+```
+
+In `auto` mode, runner tries `RUNNER_CAPTUREONE_CLI_COMMAND` first (if configured) and
+falls back to `open -a` on failure.
 
 Doctor command returns:
 - exit `0` when Capture One host prerequisites are ready
