@@ -40,6 +40,12 @@ Run one specific job by ID (debug):
 styleagent-runner run --job-id <job_id>
 ```
 
+Run host preflight diagnostics:
+
+```bash
+styleagent-runner doctor
+```
+
 ## Current MVP Capabilities
 
 - Job type support: `compile_captureone`
@@ -78,6 +84,11 @@ RUNNER_EXECUTION_MODE=host \
 RUNNER_CAPTUREONE_APP_PATH="/Applications/Capture One.app" \
 styleagent-runner poll --once
 ```
+
+Doctor command returns:
+- exit `0` when Capture One host prerequisites are ready
+- exit `1` when one or more checks fail
+- JSON diagnostic report to stdout
 
 ## Lint
 
