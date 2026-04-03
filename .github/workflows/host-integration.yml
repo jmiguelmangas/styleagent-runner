@@ -69,6 +69,7 @@ jobs:
         env:
           RUNNER_HOST_IT: "1"
           RUNNER_API_BASE_URL: "http://127.0.0.1:8000"
+          HOST_E2E_ARTIFACTS_DIR: "${{ github.workspace }}/host-e2e-artifacts"
           RAW_CAPTUREONE_APP_PATH: ${{ vars.RUNNER_CAPTUREONE_APP_PATH }}
           RAW_CAPTUREONE_IMPORT_DIR: ${{ vars.RUNNER_CAPTUREONE_IMPORT_DIR }}
           RAW_CAPTUREONE_LAUNCH_MODE: ${{ vars.RUNNER_CAPTUREONE_LAUNCH_MODE }}
@@ -81,6 +82,26 @@ jobs:
           export RUNNER_CAPTUREONE_CLI_COMMAND="${RAW_CAPTUREONE_CLI_COMMAND:-}"
           pytest -q tests/integration/test_host_local_integration.py
 
+      - name: Collect host integration evidence
+        if: always()
+        env:
+          RAW_CAPTUREONE_IMPORT_DIR: ${{ vars.RUNNER_CAPTUREONE_IMPORT_DIR }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/host-e2e-artifacts"
+          cp -f "$GITHUB_WORKSPACE/backend.log" "$GITHUB_WORKSPACE/host-e2e-artifacts/backend.log" 2>/dev/null || true
+          IMPORT_DIR="${RAW_CAPTUREONE_IMPORT_DIR:-$HOME/.styleagent/captureone/imports}"
+          if [[ -d "$IMPORT_DIR" ]]; then
+            find "$IMPORT_DIR" -maxdepth 2 -type f \
+              > "$GITHUB_WORKSPACE/host-e2e-artifacts/import-dir-files.txt" || true
+          fi
+          cat > "$GITHUB_WORKSPACE/host-e2e-artifacts/SUMMARY.md" <<EOF
+          # Host Integration Workflow Summary
+
+          - timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          - backend_log: backend.log
+          - import_dir_manifest: import-dir-files.txt
+          EOF
+
       - name: Stop backend
         if: always()
         run: |
@@ -88,9 +109,10 @@ jobs:
             kill "$(cat "$GITHUB_WORKSPACE/backend.pid")" || true
           fi
 
-      - name: Upload backend log
+      - name: Upload host integration artifacts
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: backend-host-integration-log
-          path: backend.log
+          name: host-integration-artifacts
+          path: host-e2e-artifacts
+          if-no-files-found: warn

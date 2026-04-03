@@ -156,9 +156,13 @@ Prerequisites:
 - `.github/dependabot.yml` creates weekly dependency update PRs
 - `.github/workflows/sbom.yml` generates a CycloneDX SBOM artifact
 - `.github/workflows/host-integration.yml` runs real host integration checks on self-hosted macOS runners
-  with label `captureone` (scheduled weekly and runnable manually)
+  with label `captureone` (manual-only)
 - `.github/workflows/host-runner-readiness.yml` verifies at least one online self-hosted runner
   exists with labels `self-hosted`, `macOS`, `captureone`
+
+Host workflow artifacts:
+- `host-integration-artifacts`
+- includes `backend.log`, import directory manifest, and `SUMMARY.md`
 
 ### Host Workflow Readiness Checklist
 
