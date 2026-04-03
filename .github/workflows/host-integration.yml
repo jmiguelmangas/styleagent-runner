@@ -2,8 +2,6 @@ name: Host Integration (macOS)
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 4 * * 2"
 
 concurrency:
   group: host-integration-${{ github.ref }}
